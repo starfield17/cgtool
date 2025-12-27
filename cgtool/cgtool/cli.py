@@ -47,9 +47,6 @@ def parse_color(color_str: str) -> tuple:
     
     raise ValueError(f"Unable to parse color: {color_str}")
 
-
-@click.group()
-@click.version_option(version="1.0.0", prog_name="cgtool")
 @click.group()
 @click.version_option(version="1.0.0", prog_name="cgtool")
 def cli():
