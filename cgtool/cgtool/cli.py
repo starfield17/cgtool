@@ -50,25 +50,28 @@ def parse_color(color_str: str) -> tuple:
 
 @click.group()
 @click.version_option(version="1.0.0", prog_name="cgtool")
+@click.group()
+@click.version_option(version="1.0.0", prog_name="cgtool")
 def cli():
     """
     CG Image Processing Tool
     
     Automatically pair base and diff images, remove background color, align and compose images.
     
+    \b
     Core Features:
+    * Auto Matching:      Intelligently pair base and diff images based on filename
+    * Background Removal: Auto-detect or specify background color with tolerance
+    * Image Alignment:    Multi-resolution search algorithm for precision
+    * Batch Processing:   Support for multi-process parallel processing
     
-      - Auto Matching: Intelligently pair base and diff images based on filename and image features
-      - Background Removal: Auto-detect or specify background color with tolerance adjustment
-      - Image Alignment: Multi-resolution search algorithm for efficient and precise alignment
-      - Batch Processing: Support for multi-process parallel processing
-    
+    \b
     Common Examples:
     
       # Basic usage - auto mode
       cgtool process ./input -o ./output
       
-      # Preview mode - view pairs to be processed without actual processing
+      # Preview mode (dry-run)
       cgtool process ./input -o ./output --dry-run
       
       # Recursively scan subdirectories
@@ -83,13 +86,14 @@ def cli():
       # Multi-process parallel processing (4 processes)
       cgtool process ./input -o ./output -j 4
       
-      # Interactive mode - confirm processing for each pair
+      # Interactive mode
       cgtool process ./input -o ./output -i
       
       # Verbose output + JSON report
       cgtool process ./input -o ./output -v --report-json report.json
     """
     pass
+
 
 
 @cli.command()
@@ -142,8 +146,9 @@ def process(
     """
     Process CG images
     
-    INPUT_DIR: Input directory containing base and diff images. Supports common image formats like PNG, JPG, JPEG, WEBP, BMP, TIF, etc.
+    INPUT_DIR: Input directory containing base and diff images.
     
+    \b
     Processing Flow:
       1. Scan image files in input directory
       2. Pair base and diff images according to matching mode
@@ -151,6 +156,7 @@ def process(
       4. Align diff image to base image
       5. Compose and save to output directory
     
+    \b
     Output Structure:
       Maintains diff image's relative path structure to input directory
     """
