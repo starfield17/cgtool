@@ -52,44 +52,59 @@ def parse_color(color_str: str) -> tuple:
 def cli():
     """
     CG Image Processing Tool
-    
-    Automatically pair base and diff images, remove background color, align and compose images.
-    
-    \b
-    Core Features:
-    * Auto Matching:      Intelligently pair base and diff images based on filename
-    * Background Removal: Auto-detect or specify background color with tolerance
-    * Image Alignment:    Multi-resolution search algorithm for precision
-    * Batch Processing:   Support for multi-process parallel processing
-    
-    \b
-    Common Examples:
-    
-      # Basic usage - auto mode
-      cgtool process ./input -o ./output
-      
-      # Preview mode (dry-run)
-      cgtool process ./input -o ./output --dry-run
-      
-      # Recursively scan subdirectories
-      cgtool process ./input -o ./output -r
-      
-      # Use rule matching mode
-      cgtool process ./input -o ./output --match rule --diff-pattern "*/diff*.png"
-      
-      # Specify black background with higher tolerance
-      cgtool process ./input -o ./output --bg-color black --tolerance 50
-      
-      # Multi-process parallel processing (4 processes)
-      cgtool process ./input -o ./output -j 4
-      
-      # Interactive mode
-      cgtool process ./input -o ./output -i
-      
-      # Verbose output + JSON report
-      cgtool process ./input -o ./output -v --report-json report.json
+
+    Automatically pairs base and diff images, removes background colors,
+    aligns images, and composes final results.
+
+    ── Core Features ──────────────────────────────────────────────
+
+      • Auto Matching
+        Intelligently pairs base and diff images using filenames
+        and image feature analysis.
+
+      • Background Removal
+        Auto-detect or manually specify background color with
+        adjustable tolerance.
+
+      • Image Alignment
+        Multi-resolution search for fast and precise alignment.
+
+      • Batch Processing
+        Supports multi-process parallel execution.
+
+    ── Common Examples ────────────────────────────────────────────
+
+      Basic usage (auto mode):
+        cgtool process ./input -o ./output
+
+      Preview only (no processing):
+        cgtool process ./input -o ./output --dry-run
+
+      Recursively scan subdirectories:
+        cgtool process ./input -o ./output -r
+
+      Rule-based matching:
+        cgtool process ./input -o ./output \
+          --match rule \
+          --diff-pattern "*/diff*.png"
+
+      Black background with higher tolerance:
+        cgtool process ./input -o ./output \
+          --bg-color black \
+          --tolerance 50
+
+      Parallel processing (4 workers):
+        cgtool process ./input -o ./output -j 4
+
+      Interactive confirmation:
+        cgtool process ./input -o ./output -i
+
+      Verbose output with JSON report:
+        cgtool process ./input -o ./output \
+          -v --report-json report.json
     """
     pass
+
 
 
 
