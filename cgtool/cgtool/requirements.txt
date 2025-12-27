@@ -1,6 +1,0 @@
-click>=8.0
-numpy>=1.20
-Pillow>=9.0
-scipy>=1.7
-tqdm>=4.60
-numba>=0.56
