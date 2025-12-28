@@ -1,5 +1,5 @@
 """
-cgtool/types.py
+cgtool/cgtypes.py
 Data structure definitions: ImgInfo, PairJob, ReportItem, etc.
 """
 
