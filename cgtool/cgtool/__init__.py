@@ -10,7 +10,7 @@ Usage:
 __version__ = "1.0.0"
 __author__ = "starfield17"
 
-from .types import (
+from .cgtypes import (
     ImgInfo,
     PairJob,
     ReportItem,
