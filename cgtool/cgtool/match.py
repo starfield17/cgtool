@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-from .types import ImgInfo, PairJob, MatchMode
+from .cgtypes import ImgInfo, PairJob, MatchMode
 
 # ============================================================================
 # Configuration constants
