@@ -28,7 +28,7 @@ except ImportError:
         return decorator
     prange = range
 
-from .types import AlignParams, AlignResult, BgColor
+from .cgtypes import AlignParams, AlignResult, BgColor
 
 # ============================================================================
 # Constants
