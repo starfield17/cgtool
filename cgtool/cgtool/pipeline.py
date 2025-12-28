@@ -15,7 +15,7 @@ import multiprocessing as mp
 
 from tqdm import tqdm
 
-from .types import (
+from .cgtypes import (
     PairJob,
     ReportItem,
     ProcessReport,
