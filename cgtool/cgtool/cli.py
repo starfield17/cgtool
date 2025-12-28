@@ -11,7 +11,7 @@ from typing import Optional
 
 import click
 
-from .types import MatchMode, AlignParams
+from .cgtypes import MatchMode, AlignParams
 from .pipeline import run_pipeline
 
 
