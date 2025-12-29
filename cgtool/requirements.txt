@@ -4,3 +4,4 @@ Pillow>=9.0
 scipy>=1.7
 tqdm>=4.60
 numba>=0.56
+PySide6>=6.5.0
