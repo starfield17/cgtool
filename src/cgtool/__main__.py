@@ -1,96 +1,105 @@
-"""
-cgtool package entry point.
-
-Supports:
-  - python -m cgtool [args...]
-  - PyInstaller bundled executable (where __package__ can be empty)
-Behavior:
-  - Default: run CLI entry (same as console script: cgtool = cgtool.cli:main)
-  - If you want GUI by default, set CGTOOL_MODE=gui
-  - You can force GUI with: --gui
-  - You can force CLI with: --cli
-"""
-
+# src/cgtool/__main__.py
 from __future__ import annotations
 
-import os
 import sys
-from typing import List
 
 
-def _ensure_import_path() -> None:
+CLI_FORCE_FLAGS = {
+    "--cli",        # preferred
+    "-c",           # short
+    "--console",    # alias
+    "--no-gui",     # alias
+}
+
+
+def _wants_cli(argv: list[str]) -> bool:
     """
-    When executed by PyInstaller, __package__ may be empty and relative imports break.
-    Ensure project root is on sys.path so absolute imports like `cgtool.cli` work.
-    This is safe even in normal `python -m cgtool` runs.
+    Decide whether to run CLI.
+
+    Rules:
+    - Default: GUI
+    - Run CLI only if user explicitly passes a force flag:
+        --cli | -c | --console | --no-gui
+    - Also support: `python -m cgtool cli ...` (subcommand style)
     """
-    if __package__:
-        return
-
-    pkg_dir = os.path.dirname(os.path.abspath(__file__))  # .../src/cgtool
-    src_dir = os.path.dirname(pkg_dir)                    # .../src
-    proj_root = os.path.dirname(src_dir)                  # project root
-
-    # Prefer src_dir so imports resolve to editable sources if present.
-    for p in (src_dir, proj_root):
-        if p and p not in sys.path:
-            sys.path.insert(0, p)
+    if any(flag in argv for flag in CLI_FORCE_FLAGS):
+        return True
+    if len(argv) >= 2 and argv[1].lower() == "cli":
+        return True
+    return False
 
 
-def _pick_mode(argv: List[str]) -> str:
+def _strip_cli_markers(argv: list[str]) -> list[str]:
     """
-    Decide run mode: 'cli' or 'gui'
-    Priority:
-      1) explicit flags: --cli / --gui
-      2) env var: CGTOOL_MODE=cli|gui
-      3) default: cli
+    Remove markers that are only used to trigger CLI mode, so downstream
+    argparse in cgtool.cli doesn't see unknown arguments.
     """
-    if "--gui" in argv:
-        return "gui"
-    if "--cli" in argv:
-        return "cli"
+    cleaned: list[str] = []
+    skip_next = False
 
-    mode = os.environ.get("CGTOOL_MODE", "").strip().lower()
-    if mode in ("cli", "gui"):
-        return mode
+    for i, a in enumerate(argv):
+        if skip_next:
+            skip_next = False
+            continue
 
-    return "cli"
+        # drop standalone flags
+        if a in CLI_FORCE_FLAGS:
+            continue
+
+        # drop subcommand marker: `python -m cgtool cli ...`
+        if i == 1 and a.lower() == "cli":
+            continue
+
+        cleaned.append(a)
+
+    return cleaned
 
 
-def main(argv: List[str] | None = None) -> None:
-    _ensure_import_path()
-
-    if argv is None:
-        argv = sys.argv[1:]
-
-    mode = _pick_mode(argv)
-
-    # Remove our mode flags so downstream parsers (argparse/typer/click) won't choke.
-    cleaned = [a for a in argv if a not in ("--cli", "--gui")]
-    sys.argv = [sys.argv[0], *cleaned]
-
-    if mode == "gui":
-        # GUI entry
-        try:
-            from cgtool.gui import run_gui
-        except Exception as e:
-            # Common case: GUI deps not installed in minimal environments
-            msg = str(e)
-            print("Failed to start GUI mode.", file=sys.stderr)
-            print(f"Reason: {msg}", file=sys.stderr)
-            print("", file=sys.stderr)
-            print("Tips:", file=sys.stderr)
-            print("  - Ensure GUI dependencies are installed (e.g., PySide6).", file=sys.stderr)
-            print("  - Or run CLI mode:", file=sys.stderr)
-            print("      python -m cgtool --cli ...", file=sys.stderr)
-            sys.exit(1)
-
-        run_gui()
-        return
-
-    # CLI entry (default)
+def _run_cli() -> None:
     from cgtool.cli import main as cli_main
+
+    # Remove `--cli` / `cli` marker etc. so CLI parser gets clean argv.
+    sys.argv = _strip_cli_markers(sys.argv)
     cli_main()
+
+
+def _run_gui() -> None:
+    """
+    Launch GUI. If GUI dependencies are missing, print a clear message and exit.
+    """
+    try:
+        from cgtool.gui import run_gui
+    except Exception as e:
+        msg = str(e)
+
+        # Common missing GUI deps (adjust if you use different GUI toolkit)
+        likely_gui_missing = any(
+            key in msg
+            for key in ("PySide6", "PyQt5", "PyQt6", "tkinter", "Qt", "gui")
+        )
+
+        if likely_gui_missing:
+            print("=" * 60)
+            print("GUI mode is not available in this environment.")
+            print(f"Reason: {e.__class__.__name__}: {e}")
+            print("")
+            print("To run in CLI mode:")
+            print("  python -m cgtool --cli --help")
+            print("  (or) cgtool --help")
+            print("=" * 60)
+            raise SystemExit(1)
+
+        # Unknown error: re-raise for a real traceback
+        raise
+
+    run_gui()
+
+
+def main() -> None:
+    if _wants_cli(sys.argv):
+        _run_cli()
+    else:
+        _run_gui()
 
 
 if __name__ == "__main__":
