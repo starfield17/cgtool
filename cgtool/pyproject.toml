@@ -35,6 +35,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gui = [
+    "PySide6>=6.4",
+]
 fast = [
     "numba>=0.56",
 ]
@@ -44,10 +47,16 @@ dev = [
     "black",
     "ruff",
     "numba>=0.56",
+    "PySide6>=6.4",
+]
+all = [
+    "PySide6>=6.4",
+    "numba>=0.56",
 ]
 
 [project.scripts]
 cgtool = "cgtool.cli:main"
+cgtool-gui = "cgtool.gui:run_gui"
 
 [project.urls]
 Homepage = "https://github.com/starfield17/cgtool"

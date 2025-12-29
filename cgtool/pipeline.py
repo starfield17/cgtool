@@ -263,17 +263,36 @@ class Pipeline:
                 return True
             elif response in ("q", "quit"):
                 raise KeyboardInterrupt("User cancelled")
-        
-    def run(self) -> ProcessReport:
+    
+    def run(
+        self,
+        jobs_override: Optional[List[PairJob]] = None,
+        progress_callback: Optional[Callable[[int, int, str], None]] = None,
+        cancel_check: Optional[Callable[[], bool]] = None,
+    ) -> ProcessReport:
         """
         Execute processing pipeline
+        
+        Args:
+            jobs_override: If provided, use these jobs instead of re-matching.
+                           This is useful for GUI where user has selected specific jobs.
+            progress_callback: Optional callback(current, total, message) for progress updates.
+            cancel_check: Optional callable that returns True if processing should be cancelled.
+        
+        Returns:
+            ProcessReport with results
         """
-        # Matching
-        if not self.jobs:
+        # Use override jobs if provided, otherwise match
+        if jobs_override is not None:
+            self.jobs = jobs_override
+        elif not self.jobs:
             self.match()
         
         if not self.jobs:
-            print("No pairs found!")
+            if progress_callback:
+                progress_callback(0, 0, "No pairs found!")
+            else:
+                print("No pairs found!")
             return self.report
         
         # Dry run
@@ -287,6 +306,10 @@ class Pipeline:
         # Prepare tasks
         tasks_to_run = []
         for i, job in enumerate(self.jobs, 1):
+            # Check for cancellation
+            if cancel_check and cancel_check():
+                break
+            
             if self.interactive:
                 try:
                     if not self._confirm_job(job, i, len(self.jobs)):
@@ -306,10 +329,30 @@ class Pipeline:
         if not tasks_to_run:
             return self.report
         
+        total = len(tasks_to_run)
+        
         # Execute processing
         if self.workers <= 1:
             # Single process
-            for job in tqdm(tasks_to_run, desc="Processing"):
+            use_tqdm = progress_callback is None
+            iterator = tqdm(tasks_to_run, desc="Processing") if use_tqdm else tasks_to_run
+            
+            for idx, job in enumerate(iterator):
+                # Check for cancellation
+                if cancel_check and cancel_check():
+                    # Mark remaining as skipped
+                    for remaining_job in tasks_to_run[idx:]:
+                        self.report.add(ReportItem(
+                            status=JobStatus.SKIPPED,
+                            reason=FailReason.USER_SKIP,
+                            base_path=remaining_job.base_path,
+                            diff_path=remaining_job.diff_path,
+                        ))
+                    break
+                
+                if progress_callback:
+                    progress_callback(idx, total, f"Processing: {job.diff_path.name}")
+                
                 report_item, _ = _process_job_impl(
                     job,
                     self.output_root,
@@ -323,6 +366,9 @@ class Pipeline:
                 if self.verbose and report_item.is_success:
                     ar = report_item.align_result
                     print(f"  {job.diff_path.name}: offset=({ar.dx}, {ar.dy}), match rate={ar.fit_percent:.1f}%")
+            
+            if progress_callback:
+                progress_callback(total, total, "Complete")
         else:
             # Multi-process
             args_list = [
@@ -333,16 +379,27 @@ class Pipeline:
             with ProcessPoolExecutor(max_workers=self.workers) as executor:
                 futures = [executor.submit(_worker_process_job, args) for args in args_list]
                 
-                for future in tqdm(as_completed(futures), total=len(futures), desc="Processing"):
+                use_tqdm = progress_callback is None
+                completed = 0
+                
+                for future in (tqdm(as_completed(futures), total=len(futures), desc="Processing") 
+                               if use_tqdm else as_completed(futures)):
                     try:
                         report_item, align_result = future.result()
                         self.report.add(report_item)
+                        completed += 1
+                        
+                        if progress_callback:
+                            progress_callback(completed, total, f"Completed: {report_item.diff_path.name if report_item.diff_path else 'unknown'}")
                         
                         if self.verbose and report_item.is_success:
                             ar = report_item.align_result
                             print(f"  {report_item.diff_path.name}: offset=({ar.dx}, {ar.dy}), match rate={ar.fit_percent:.1f}%")
                     except Exception as e:
                         print(f"Process execution failed: {e}")
+            
+            if progress_callback:
+                progress_callback(total, total, "Complete")
         
         return self.report
 
@@ -362,9 +419,17 @@ def run_pipeline(
     dry_run: bool = False,
     interactive: bool = False,
     verbose: bool = False,
+    jobs_override: Optional[List[PairJob]] = None,
+    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+    cancel_check: Optional[Callable[[], bool]] = None,
 ) -> ProcessReport:
     """
     Convenience function: run processing pipeline
+    
+    Args:
+        jobs_override: If provided, use these jobs instead of re-matching.
+        progress_callback: Optional callback(current, total, message) for progress updates.
+        cancel_check: Optional callable that returns True if processing should be cancelled.
     """
     align_params = AlignParams.fast() if align_mode == "fast" else AlignParams.precise()
     
@@ -385,4 +450,8 @@ def run_pipeline(
         verbose=verbose,
     )
     
-    return pipeline.run()
+    return pipeline.run(
+        jobs_override=jobs_override,
+        progress_callback=progress_callback,
+        cancel_check=cancel_check,
+    )
