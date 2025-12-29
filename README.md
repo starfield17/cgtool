@@ -8,6 +8,7 @@ CG Image Auto-Matching, Background Removal, and Alignment Tool.
 - **Background Removal**: Auto-detect or specify background color with tolerance adjustment
 - **Image Alignment**: Multi-resolution search algorithm for efficient and precise alignment
 - **Batch Processing**: Multi-process parallel processing for large volumes of images
+- **Graphical User Interface**: Easy-to-use GUI with preview, configuration, and progress tracking (requires PySide6)
 
 ## Installation
 
@@ -16,11 +17,47 @@ CG Image Auto-Matching, Background Removal, and Alignment Tool.
 cd cgtool
 pip install -e .
 
-# Or install dependencies directly
+# For CLI only (default)
+pip install -e .[cli]
+
+# For GUI support
+pip install -e .[gui]
+
+# Or install all features
+pip install -e .[all]
+
+# Manual dependency installation
+# CLI dependencies
 pip install click numpy Pillow scipy numba tqdm
+
+# GUI dependencies (optional)
+pip install PySide6
 ```
 
 ## Quick Start
+
+### GUI Mode (Recommended)
+
+If PySide6 is installed, simply run:
+
+```bash
+# Launch GUI
+cgtool-gui
+
+# Or use the module entry point
+python -m cgtool
+```
+
+The GUI provides:
+- 📂 Browse input/output directories
+- 🔍 Preview all matched pairs before processing
+- ⚙️ Configure all parameters (matching mode, background, alignment, etc.)
+- ✅ Select/deselect pairs with checkboxes
+- 📊 Real-time progress tracking
+- 📋 Detailed processing reports with error details
+- 💾 Export reports to JSON
+
+### CLI Mode
 
 ```bash
 # Basic usage: auto-match and process
@@ -60,7 +97,103 @@ output/
     diff2.png
 ```
 
+## GUI Usage Guide
+
+### Overview
+
+The graphical interface provides an intuitive way to configure and process CG images without using command-line arguments.
+
+### Configuration Panel
+
+**Directory Settings**
+- **Input Directory**: Select the folder containing base and diff images
+- **Output Directory**: Select where processed images will be saved
+
+**Matching Options**
+- **Match Mode**: Choose between `auto` (intelligent) or `rule` (pattern-based)
+- **Base Pattern**: Pattern for base files (only when mode=rule)
+- **Diff Pattern**: Pattern for diff files (only when mode=rule)
+- **Recursive**: Enable to scan subdirectories
+
+**Background Settings**
+- **Auto Detect**: Automatically detect background color
+- **Color**: Custom color selector (click to choose)
+- **Tolerance**: Background removal threshold (0-255)
+- **Mode**: `match` (RGB comparison) or `norm` (brightness-based)
+
+**Processing Settings**
+- **Align Mode**: `fast` (quick) or `precise` (accurate)
+- **Workers**: Number of parallel processes (1-16)
+
+### Workflow
+
+1. **Select Directories**
+   - Click "Browse..." to choose input and output directories
+
+2. **Scan for Pairs**
+   - Click "🔍 Scan" to detect all base/diff pairs
+   - Review the list in the table preview
+
+3. **Select Pairs to Process**
+   - Use "Select All" / "Deselect All" for bulk selection
+   - Or click individual checkboxes
+   - Hover over rows to see full file paths
+
+4. **Configure Parameters**
+   - Adjust background, tolerance, alignment mode as needed
+   - Click the color button to open color picker dialog
+
+5. **Process**
+   - Click "▶ Process Selected" to begin
+   - Monitor progress in real-time
+   - Click "Cancel" to stop processing
+
+6. **Review Results**
+   - Check the "Report" tab for detailed results
+   - Success/failure status shown in table
+   - Export report to JSON for analysis
+
+### Table Columns
+
+| Column | Description |
+|--------|-------------|
+| [ ] | Checkbox for selection |
+| Base | Base image filename |
+| Diff | Diff image filename |
+| Output | Output path relative to output directory |
+| Status | Processing result (✓ Success / ✗ Failed / ⊘ Skipped) |
+
+**Color Indicators**
+- ⚪ Normal (white): No conflicts
+- 🟡 Yellow warning: Output file already exists (will be overwritten)
+- 🔴 Red error: Multiple pairs output to same file (conflict)
+
+### Report Tab
+
+The Report tab shows:
+- Summary statistics (total, success, failed, skipped)
+- Detailed breakdown by failure reason
+- Per-item results with alignment offsets and match rates
+- Processing time for each pair
+
+Use "Export JSON..." button to save the full report for further analysis or scripting.
+
 ## Commands
+
+### `cgtool-gui`
+
+Launch the graphical user interface (requires PySide6).
+
+```
+Usage: cgtool-gui
+```
+
+**Requirements**: PySide6 must be installed:
+```bash
+pip install cgtool[gui]
+# or
+pip install PySide6
+```
 
 ### `cgtool process`
 
@@ -326,7 +459,17 @@ Suggestions:
 
 ## Common Usage Scenarios
 
-### Scenario 1: Standard Naming Format Batch Processing
+### Scenario 1: Standard Naming Format Batch Processing (GUI)
+
+1. Launch GUI: `cgtool-gui`
+2. Browse to input/output directories
+3. Click "Scan" to detect pairs
+4. Click "Select All" to process all
+5. Adjust workers to 4 for parallel processing
+6. Click "Process Selected"
+
+### Scenario 2: CLI Batch Processing
+
 ```bash
 cgtool process ./input -o ./output -j 4 -v
 ```
@@ -334,24 +477,38 @@ cgtool process ./input -o ./output -j 4 -v
 - Multi-process acceleration
 - Verbose output to view processing progress
 
-### Scenario 2: Custom Naming Rules
-```bash
-cgtool process ./input -o ./output \
-  --match rule \
-  --base-pattern "bg_*.png" \
-  --diff-pattern "diff_*.png"
-```
-- Use rule-based matching mode
-- Specify custom filename patterns
+### Scenario 3: Custom Naming Rules
 
-### Scenario 3: Complex Directory Structure
+**GUI:**
+- Set Match Mode to "rule"
+- Enter custom patterns in Base Pattern and Diff Pattern fields
+
+**CLI:**
+```bash
+cgtool process ./input -o ./output   --match rule   --base-pattern "bg_*.png"   --diff-pattern "diff_*.png"
+```
+
+### Scenario 4: Complex Directory Structure
+
+**GUI:**
+- Enable "Recursive" checkbox
+- Select background color (or use auto-detect)
+- Adjust tolerance slider to 40
+
+**CLI:**
 ```bash
 cgtool process ./input -o ./output -r --bg-color black --tolerance 40
 ```
-- Recursively scan all subdirectories
-- Black background, appropriately increased tolerance
 
-### Scenario 4: Preview Check Before Processing
+### Scenario 5: Preview Check Before Processing
+
+**GUI:**
+- Scan and review all pairs in the table
+- Check for conflicts (highlighted in red)
+- Hover over rows to see full paths
+- Select/deselect as needed before processing
+
+**CLI:**
 ```bash
 # Preview first
 cgtool process ./input -o ./output --dry-run
@@ -360,42 +517,88 @@ cgtool process ./input -o ./output --dry-run
 cgtool process ./input -o ./output -j 4
 ```
 
-### Scenario 5: Generate Processing Report
-```bash
-cgtool process ./input -o ./output \
-  --report-json report.json \
-  -v
-```
-- Generate detailed report in JSON format
-- Contains processing status and results for each file
+### Scenario 6: Generate Processing Report
 
-### Scenario 6: Interactive Processing for Important Files
+**GUI:**
+- After processing, check the "Report" tab
+- Click "Export JSON..." to save detailed report
+
+**CLI:**
+```bash
+cgtool process ./input -o ./output   --report-json report.json   -v
+```
+
+### Scenario 7: Interactive Processing for Important Files
+
+**GUI:**
+- Use checkboxes to select only important pairs
+- Review details by clicking on each row
+
+**CLI:**
 ```bash
 cgtool process ./input -o ./output -i
 ```
-- Confirm each image
-- Suitable for important files or testing phase
 
 ## Troubleshooting
 
+### GUI Not Launching
+
+**Problem**: Running `cgtool-gui` or `python -m cgtool` shows error about PySide6
+
+**Solution**:
+```bash
+pip install PySide6
+# or
+pip install cgtool[gui]
+```
+
+**Alternative**: Use CLI mode directly with `cgtool <command>`.
+
 ### No Pairs Found
+
+**GUI**:
+1. Check input directory path is correct
+2. Try enabling "Recursive" checkbox
+3. Switch Match Mode to "rule" and adjust patterns
+4. Click "Scan" again
+
+**CLI**:
 1. Check if filenames follow the matching mode
 2. Use `cgtool scan ./input` to view scan results
 3. Try rule-based matching mode
 4. Check if `-r` recursive scan is needed
 
 ### Poor Background Removal Results
+
+**GUI**:
+1. Disable "Auto Detect" and manually pick background color
+2. Increase "Tolerance" value
+3. Try switching "Mode" between match/norm
+
+**CLI**:
 1. Adjust `--tolerance` parameter
 2. Try specifying explicit background color `--bg-color`
 3. Switch `--bg-mode` mode
 4. Use `cgtool info ./image.png` to view image features
 
 ### Inaccurate Alignment
+
+**GUI**:
+1. Change "Align Mode" to "precise"
+2. Check table for size warnings
+
+**CLI**:
 1. Switch to `--align-mode precise` for precise mode
 2. Check if background and diff image dimensions are reasonable
 3. Use `-v` verbose mode to view alignment parameters
 
 ### Slow Processing Speed
+
+**GUI**:
+1. Reduce "Workers" number (if memory is insufficient)
+2. Use "fast" alignment mode
+
+**CLI**:
 1. Reduce number of parallel processes (if memory is insufficient)
 2. Use fast alignment mode `--align-mode fast`
 3. Check for large resolution images
@@ -432,6 +635,20 @@ for job in jobs:
     # Composite
     output = compose_aligned(base, diff, result.dx, result.dy)
     save_rgba(output, Path("./output") / job.output_rel_path)
+```
+
+## Architecture
+
+```
+cgtool/
+├── cgtypes.py          # Data structures (ImgInfo, PairJob, ReportItem, etc.)
+├── match.py            # Auto/rule matching logic
+├── imageops.py         # Background removal, alignment, composition
+├── pipeline.py         # Processing orchestration, parallel execution
+├── cli.py              # Command-line interface
+├── gui.py              # Graphical user interface (PySide6)
+├── __init__.py         # Package exports
+└── __main__.py         # Entry point (GUI → CLI fallback)
 ```
 
 ## License
