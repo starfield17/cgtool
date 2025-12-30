@@ -640,15 +640,15 @@ for job in jobs:
 ## Architecture
 
 ```
-cgtool/
-├── cgtypes.py          # Data structures (ImgInfo, PairJob, ReportItem, etc.)
-├── match.py            # Auto/rule matching logic
-├── imageops.py         # Background removal, alignment, composition
-├── pipeline.py         # Processing orchestration, parallel execution
-├── cli.py              # Command-line interface
-├── gui.py              # Graphical user interface (PySide6)
-├── __init__.py         # Package exports
-└── __main__.py         # Entry point (GUI → CLI fallback)
+src/cgtool/
+├── __init__.py         # Package exports and public API
+├── __main__.py         # Entry point (GUI → CLI fallback)
+├── cgtypes.py          # Data structures (ImgInfo, PairJob, AlignResult, etc.)
+├── match.py            # Auto/rule matching logic for image pairing
+├── imageops.py         # Image operations: background removal, alignment, composition
+├── pipeline.py         # Processing orchestration and parallel execution
+├── cli.py              # Command-line interface (Click)
+└── gui.py              # Graphical user interface (PySide6)
 ```
 
 ## License
